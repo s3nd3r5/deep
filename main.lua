@@ -3,7 +3,7 @@ SCR_H=love.graphics.getHeight()
 
 function debug(str)
   if DEBUG then
-    print(str)
+    print(string.format("%s - %s", os.date("%Y-%m-%dT%X", os.time()), str))
   end
 end
 
@@ -50,15 +50,13 @@ end
 
 function set_s_timer(ms, state)
   S_TIMER_NEXT=state
-  S_TIMER=ms
-  S_TIMER_P_TIME= cur_time()
+  S_TIMER=ms 
 end
 
-function check_s_timer()
+function check_s_timer(dt)
   if S_TIMER ~= nil then
-    c_time = cur_time()
-    dt = (c_time - S_TIMER_P_TIME)
-    if S_TIMER <= dt then
+    S_TIMER = S_TIMER - dt
+    if S_TIMER <= 0 then
       transition_state(S_TIMER_NEXT)
       S_TIMER=nil
       S_TIMER_NEXT=nil
@@ -97,7 +95,7 @@ function love.draw ()
 end
 
 function love.update (dt)
-  check_timers(dt)
+  check_timers(dt * 1000)
 end
 
 function render () 
@@ -118,6 +116,7 @@ function setup_state(state)
     game_over_routine ()
   else
     love.graphics.print(string.format("state error # %d", state or -1), 0, 0)
+    debug("Invalid state")
   end
 end
 

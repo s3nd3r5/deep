@@ -1,3 +1,4 @@
+-- GLOBAL VARIABLES
 SCR_W=love.graphics.getWidth()
 SCR_H=love.graphics.getHeight()
 
@@ -7,21 +8,102 @@ function debug(str)
   end
 end
 
---[[ SPRITE TABLES --]]
+-- SPRITES
+
+SPRITE_TITLE = love.graphics.newImage("sprites/Title.png")
+
+
+-- GRAPHICS
+-- Types
+T_SPRITE = 'sprite'
+T_TEXT = 'text'
 
 BACKGROUND={}
-FORGROUND={}
+FOREGROUND={}
 HUD={}
-TEXT={}
 
-function push_text(str, x, y, justify_x, justify_y)
+function push_fore_text(str, x, y, justify_x, justify_y)
+  push_text(FOREGROUND, str, x, y, justify_x, justify_y)
+end
+
+function push_bg_text(str, x, y, justify_x, justify_y)
+  push_text(BACKGROUND, str, x, y, justify_x, justify_y)
+end
+
+function push_hud_text(str, x, y, justify_x, justify_y)
+  push_text(HUD, str, x, y, justify_x, justify_y)
+end
+
+function push_text(tbl, str, x, y, justify_x, justify_y)
   if justify_x then
-    x = x - (#str * 2)
+    x = x - (#str/2)
+    align="left"
   end
   if justify_y then
-    y = y - (#str * 2)
+    y = y - (#str/2)
   end
-  table.insert(TEXT, { str, x, y })
+  if justify_x and justify_y then
+    align="center"
+  end
+  table.insert(tbl, { msg=str, x=x, y=y, type=T_TEXT, align=align })
+end
+
+function push_fore_sprite(spr, x, y, justify_x, justify_y)
+  push_sprite(FOREGROUND, spr, x, y, justify_x, justify_y)
+end
+
+function push_bg_sprite(spr, x, y, justify_x, justify_y)
+  push_sprite(BACKGROUND, spr, x, y, justify_x, justify_y)
+end
+function push_hud_sprite(spr, x, y, justify_x, justify_y)
+  push_sprite(HUD, spr, x, y, justify_x, justify_y)
+end
+
+function push_sprite(tbl, spr, x, y, justify_x, justify_y)
+  if justify_x then
+    x = x - (spr:getWidth() / 2)
+  end
+  if justify_y then 
+    y = y - (spr:getHeight() / 2)
+  end
+  table.insert(tbl, { sprite=spr, x=x, y=y, type=T_SPRITE } )
+end
+
+function render () 
+  for i=1, #BACKGROUND do
+    render_type(BACKGROUND[i])
+  end
+  for i=1, #FOREGROUND do
+    render_type(FOREGROUND[i])
+  end
+  for i=1, #HUD do
+    render_type(HUD[i])
+  end
+end
+
+function render_type (tableEl)
+  if tableEl.type == nil then
+    debug(string.format("Cannont print tableEl: %s", tableEl or "nil"))
+  elseif tableEl.type == T_SPRITE then
+    render_type_sprite(tableEl)
+  elseif tableEl.type == T_TEXT then
+    render_type_text(tableEl)
+  else 
+    debug(string.format("Unknown render type: %s", tableEl.type or "nil"))
+  end
+end
+
+
+function render_type_text (tableText)
+  if tableText.align ~= nil then
+    love.graphics.printf(tableText.msg, tableText.x, tableText.y, SCR_W, tableText.align)
+  else
+    love.graphics.print(tableText.msg, tableText.x, tableText.y, SCR_W, SCR_H)
+   end
+end
+
+function render_type_sprite (tableSprite) 
+  love.graphics.draw(tableSprite.sprite, tableSprite.x, tableSprite.y)
 end
 
 function flush(tbl)
@@ -30,7 +112,7 @@ function flush(tbl)
   end
 end
 
---[[ END SPRITE TABLES --]]
+-- END GRAPHICS
 
 --[[ TIMER --]]
 -- Timers can be set for things that are only available periodically
@@ -68,10 +150,10 @@ end
 
 --[[ STATES --]]
 
-S_TITLE=1
-S_START=2
-S_GAME=3
-S_GAME_OVER=4
+S_TITLE="title"
+S_START="start"
+S_GAME="game"
+S_GAME_OVER="game over"
 
 P_STATE=nil
 C_STATE=S_TITLE
@@ -95,14 +177,21 @@ function love.draw ()
 end
 
 function love.update (dt)
+  check_keypress(C_STATE)
   check_timers(dt * 1000)
 end
 
-function render () 
- for i=1, #TEXT do
-   text_obj=TEXT[i]
-   love.graphics.print(text_obj[1], text_obj[2], text_obj[3])
- end
+function check_keypress (state)
+  if state == S_START then
+    if love.keyboard.isDown("return", "kpenter") then
+      transition_state(S_GAME)
+    end
+  end
+  if state == S_GAME then
+    if love.keyboard.isDown("escape") then
+      love.event.quit()
+    end
+  end
 end
 
 function setup_state(state)
@@ -115,8 +204,9 @@ function setup_state(state)
   elseif state == S_GAME_OVER then
     game_over_routine ()
   else
-    love.graphics.print(string.format("state error # %d", state or -1), 0, 0)
-    debug("Invalid state")
+    err_msg = string.format("state error # %s", state or "nil")
+    love.graphics.print(err_msg, 0, 0)
+    debug(err_msg)
   end
 end
 
@@ -128,22 +218,22 @@ end
 
 function start_routine ()
   debug("setup start")
-  push_text("The Deep", SCR_W/2, 0, true)
-  push_text("Any Key to Start", SCR_W/2, SCR_H/2, true)
+  push_hud_sprite(SPRITE_TITLE, SCR_W/2, SCR_H/2, true, true)
+  push_hud_text("Press Enter to Start", 0, SCR_H-100, true, true)
 end
 
 function clear_start_routine ()
   debug("clearing start")
-  flush(TEXT)
+  flush(HUD)
 end
 
 function title_routine ()
   debug("setup title")
-  push_text("The Deep", SCR_W/2, SCR_H/2, true, true)
+  push_hud_sprite(SPRITE_TITLE, SCR_W/2, SCR_H/2, true, true)
   set_s_timer(1000, S_START)
 end
 
 function clear_title_routine ()
   debug("clearing title")
-  flush(TEXT)
+  flush(HUD)
 end

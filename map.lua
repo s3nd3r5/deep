@@ -7,13 +7,16 @@ S_DIR_SOUTH=2
 S_DIR_EAST=3
 S_DIR_WEST=4
 
-Space = { type=ST_EMPTY, visited=false, neighbors = {} }
+function moveDirX(dir, x)
+  if dir == S_DIR_EAST then return x - 1
+  elseif dir == S_DIR_WEST then return x + 1
+  else return x end
+end
 
-function Space:new(type)
-  o = { type=type, visited=false, neighbors = {} }
-  setmetatable(o, self)
-  self.__index = self
-  return o
+function moveDirY(dir, y)
+  if dir == S_DIR_NORTH then return y - 1
+  elseif dir == S_DIR_SOUTH then return y + 1
+  else return y end
 end
 
 function oppositeDirection(dir)
@@ -21,8 +24,25 @@ function oppositeDirection(dir)
   elseif dir == S_DIR_SOUTH then return S_DIR_NORTH
   elseif dir == S_DIR_EAST then return S_DIR_WEST
   elseif dir == S_DIR_WEST then return S_DIR_EAST
-  else debug(string.format("Invalid dir: %d", dir or "-1"))
+  else print(string.format("Invalid dir: %d", dir or "-1"))
   end
+end
+
+Space = { type=ST_EMPTY, visited=false, neighbors = {}, x=0, y=0 }
+
+function Space:new(type)
+  o = { type=type, visited=false, neighbors = {}, x=0, y=0 }
+  setmetatable(o, self)
+  self.__index = self
+  return o
+end
+
+function Space:hasAdjacent(dir)
+  return self.neighbors[dir] ~= nil
+end
+
+function Space:getAdjacent(dir)
+  return self.neighbors[dir]
 end
 
 function Space:addNorth(space)
@@ -43,10 +63,10 @@ end
 
 function Space:add(space, dir)
   if self.neighbors[dir] == nil then
-    self.neightbors[dir] = space
+    self.neighbors[dir] = space
     space:add(self, oppositeDirection(dir))
   else
-    debug("Cannot add space, space dir already filled")
+    print("Cannot add space, space dir already filled")
   end
 end
 
@@ -61,43 +81,75 @@ Map = {
   x_max_bound = 0, -- the maximum x distance
   y_max_bound = 0, -- the maximum y distance
   x_min_bound = 0, -- the minimum x distance
-  y_min_bound = 0 -- the maximum y distance
+  y_min_bound = 0, -- the maximum y distance
+  spaces = {}
 }
 
 function Map:new (type, space, x_min_bound, y_min_bound, x_max_bound, y_max_bound, origin_x, origin_y)
+  space.x = origin_x
+  space.y = origin_y
+  spaces = {}
   o = {
     type=type,
-    start_space=start_space,
-    current_space=start_space,
+    start_space=space,
+    current_space=space,
     x_min_bound=x_min_bound,
     y_min_bound=y_min_bound,
     x_max_bound=x_max_bound,
-    y_max_bound=y_max_bound
+    y_max_bound=y_max_bound,
+    spaces = spaces
   }
-  self.start_space.x = origin_x
-  self.start_space.y = origin_y
+  for y=y_min_bound, y_max_bound do
+    spaces[y] = {}
+  end 
+  spaces[origin_y][origin_x] = space
   setmetatable(o, self)
   self.__index = self
   return o
 end
 
-function Map:checkMove(space, dir)
-  new_x = moveDirX(dir, space.x)
-  new_y = moveDirY(dir, space.y)
-
-  return  new_x >= self.x_min_bound 
+function Map:checkMove(new_x, new_y)
+  return new_x >= self.x_min_bound 
     and new_x <= self.x_max_bound 
     and new_y >= self.y_min_bound 
     and new_y <= self.y_max_bound 
-    and space:check(dir)
-end
+end 
 
-function Map:move(space, dir)
-  if self:checkMove(space, dir) then
-    next_space = space:moveDir(dir)
+function Map:move(dir)
+  space = self.current_space
+  
+  new_x = moveDirX(dir, space.x)
+  new_y = moveDirY(dir, space.y)
+  
+  if space:hasAdjacent(dir) then
+    next_space = space:getAdjacent(dir)
+    self.current_space = next_space
+  elseif self:checkMove(new_x, new_y) then
+    next_space = Space:new(ST_EMPTY)
+    space:add(next_space, dir)
+    self.spaces[new_y][new_x] = next_space
+    next_space.x = new_x
+    next_space.y = new_y
     self.current_space = next_space
   end
+ 
+  return self.current_space
+end
 
-function Map:generate()
+function print_map(map)
+  for y=map.y_min_bound, map.y_max_bound do
+    s = ""
+    for x=map.x_min_bound, map.x_max_bound do
+      sp = map.spaces[y][x]
+      if sp == nil then
+        s = s .. " ?"
+      elseif sp.x == map.current_space.x and sp.y == map.current_space.y then
+        s = s .. " o"
+      else
+        s = s .. " ."
+      end
+    end
+    print(s)
+  end
 end
 

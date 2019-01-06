@@ -28,10 +28,25 @@ function oppositeDirection(dir)
   end
 end
 
-Space = { type=ST_EMPTY, visited=false, neighbors = {}, x=0, y=0 }
+-- MAP_TYPES
+-- These select the tileset to chose from
+MT_CAVE = "cave" -- the typical
+
+-- SPRITES
+
+SPRITES = {}
+
+SPRITES[MT_CAVE] = {}
+SPRITES[MT_CAVE][ST_EMPTY] = love.graphics.newImage("sprites/grass.png")
+
+function get_sprite(space_type, map_type)
+  return SPRITES[map_type][space_type]
+end
+
+Space = { type=ST_EMPTY, visited=false, neighbors = {}, x=0, y=0, sprite=nil }
 
 function Space:new(type)
-  o = { type=type, visited=false, neighbors = {}, x=0, y=0 }
+  o = { type=type, visited=false, neighbors = {}, x=0, y=0, sprite=nil }
   setmetatable(o, self)
   self.__index = self
   return o
@@ -70,10 +85,6 @@ function Space:add(space, dir)
   end
 end
 
--- MAP_TYPES
--- These select the tileset to chose from
-MT_CAVE = "cave" -- the typical
-
 Map = { 
   type = MT_CAVE,
   start_space = nil, -- the space the character will start from
@@ -88,6 +99,7 @@ Map = {
 function Map:new (type, space, x_min_bound, y_min_bound, x_max_bound, y_max_bound, origin_x, origin_y)
   space.x = origin_x
   space.y = origin_y
+  space.sprite = get_sprite(space.type, type)
   spaces = {}
   o = {
     type=type,
@@ -121,19 +133,33 @@ function Map:move(dir)
   new_x = moveDirX(dir, space.x)
   new_y = moveDirY(dir, space.y)
   
+  is_new = false
+
   if space:hasAdjacent(dir) then
     next_space = space:getAdjacent(dir)
     self.current_space = next_space
+    is_new = false
   elseif self:checkMove(new_x, new_y) then
     next_space = Space:new(ST_EMPTY)
     space:add(next_space, dir)
     self.spaces[new_y][new_x] = next_space
     next_space.x = new_x
     next_space.y = new_y
+    next_space.sprite = get_sprite(next_space.type, self.type)
     self.current_space = next_space
+    is_new = true
   end
  
-  return self.current_space
+  return is_new 
+end
+
+function Map:render()
+
+end
+
+function Map:generate()
+  
+
 end
 
 function print_map(map)
@@ -152,4 +178,3 @@ function print_map(map)
     print(s)
   end
 end
-

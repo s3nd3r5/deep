@@ -1,3 +1,4 @@
+love = require(".tests.mocklove")
 require("..map")
 
 local origin = Space:new(ST_EMPTY)
@@ -12,25 +13,34 @@ print("=== check origin ===")
 print(string.format("x: %d y: %d", map.start_space.x, map.start_space.y))
 
 print("=== add new space ===")
-next_space = map:move(S_DIR_NORTH)
+map:move(S_DIR_NORTH)
+next_space = map.current_space
 print(next_space)
 print(string.format("next x: %d == %d, y: %d == %d", origin.x, next_space.x, origin.y - 1, next_space.y))
 
 print_map(map)
 print("=== move back to origin ===")
-back_to_origin = map:move(S_DIR_SOUTH) -- return back south (previously moved north)
+new_space = map:move(S_DIR_SOUTH) -- return back south (previously moved north)
+back_to_origin = map.current_space
+print(string.format("%s == false", new_space))
 print(back_to_origin)
 print(back_to_origin.x == origin.x)
 
 print_map(map)
 print("=== move south again ===")
-next_space = map:move(S_DIR_SOUTH)
+new_space = map:move(S_DIR_SOUTH)
+next_space = map.current_space
+print(string.format("%s == true", new_space))
 print(string.format("next.x == 2 ? %s | next.y == 3 ? %s", next_space.x == 2, next_space.y == 3))
 
 print_map(map)
 print("=== cant move south again ===")
 current_space = map.current_space
-next_space = map:move(S_DIR_SOUTH)
+new_space = map:move(S_DIR_SOUTH)
+next_space = map.current_space
+print(string.format("%s == false", new_space))
 print(string.format("current.x == next.x and current.y == next.y = %s", current_space.x == next_space.x and current_space.y == next_space.y))
 
 print_map(map)
+
+print(next_space.sprite)

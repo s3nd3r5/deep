@@ -1,3 +1,6 @@
+require(".game")
+require(".map")
+
 -- GLOBAL VARIABLES
 SCR_W=love.graphics.getWidth()
 SCR_H=love.graphics.getHeight()
@@ -191,6 +194,19 @@ function check_keypress (state)
     if love.keyboard.isDown("escape") then
       love.event.quit()
     end
+    new_space = false
+    if love.keyboard.isDown("up") then
+      new_space = G_MAP:move(S_DIR_NORTH)
+    elseif love.keyboard.isDown("down") then
+      new_space = G_MAP:move(S_DIR_SOUTH)
+    elseif love.keyboard.isDown("left") then
+      new_space = G_MAP:move(S_DIR_WEST)
+    elseif love.keyboard.isDown("right") then
+      new_space = G_MAP:move(S_DIR_EAST)
+    end
+    if new_space then
+      add_space(G_MAP.current_space)
+    end
   end
 end
 
@@ -213,6 +229,10 @@ end
 function clear_state (state)
   if state == S_TITLE then
     clear_title_routine ()
+  elseif state == S_START then
+    clear_start_routine ()
+  elseif state == S_GAME then
+    clear_game_routine ()
   end
 end
 

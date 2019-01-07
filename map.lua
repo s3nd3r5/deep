@@ -4,12 +4,12 @@ ST_EMPTY = "empty" -- a regular empty space
 
 S_DIR_NORTH=1
 S_DIR_SOUTH=2
-S_DIR_EAST=3
-S_DIR_WEST=4
+S_DIR_WEST=3
+S_DIR_EAST=4
 
 function moveDirX(dir, x)
-  if dir == S_DIR_EAST then return x - 1
-  elseif dir == S_DIR_WEST then return x + 1
+  if dir == S_DIR_EAST then return x + 1
+  elseif dir == S_DIR_WEST then return x - 1
   else return x end
 end
 

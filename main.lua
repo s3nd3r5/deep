@@ -4,6 +4,7 @@ require(".map")
 -- GLOBAL VARIABLES
 SCR_W=love.graphics.getWidth()
 SCR_H=love.graphics.getHeight()
+--love.keyboard.setKeyRepeat(true)
 
 function debug(str)
   if DEBUG then
@@ -190,18 +191,22 @@ function check_keypress (state)
       transition_state(S_GAME)
     end
   end
-  if state == S_GAME then
-    if love.keyboard.isDown("escape") then
+end
+
+function love.keypressed(key, scancode, is_repeated)
+  if C_STATE == S_GAME then
+    if key == "escape" then
       love.event.quit()
     end
     new_space = false
-    if love.keyboard.isDown("up") then
+     
+    if key == "up" then
       new_space = G_MAP:move(S_DIR_NORTH)
-    elseif love.keyboard.isDown("down") then
+    elseif key == "down" then
       new_space = G_MAP:move(S_DIR_SOUTH)
-    elseif love.keyboard.isDown("left") then
+    elseif key == "left" then
       new_space = G_MAP:move(S_DIR_WEST)
-    elseif love.keyboard.isDown("right") then
+    elseif key == "right" then
       new_space = G_MAP:move(S_DIR_EAST)
     end
     if new_space then
